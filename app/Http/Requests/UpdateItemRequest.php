@@ -4,29 +4,23 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class UpdateItemRequest extends FormRequest
-{
-    public function authorize()
-    {
+class UpdateItemRequest extends FormRequest {
+    public function authorize() {
         return true;
     }
 
-    protected function prepareForValidation()
-    {
-        $this->merge([
-            'name'        => trim(strip_tags($this->name ?? '')),
-            'description' => trim(strip_tags($this->description ?? '')),
-        ]);
+    public function rules() {
+        return [
+            'name'        => 'sometimes|required|string|max:255',
+            'quantity'    => 'sometimes|required|integer|min:0',
+            'price'       => 'sometimes|required|numeric|min:0',
+            'category_id' => 'sometimes|required|exists:categories,id',
+        ];
     }
 
-    public function rules()
-    {
+    public function messages() {
         return [
-            'category_id' => 'sometimes|exists:categories,id',
-            'name'        => 'sometimes|string|max:255',
-            'description' => 'nullable|string',
-            'quantity'    => 'sometimes|integer|min:0',
-            'price'       => 'sometimes|numeric|min:0',
+            'sometimes.required' => 'Field ini diperlukan saat diubah.',
         ];
     }
 }

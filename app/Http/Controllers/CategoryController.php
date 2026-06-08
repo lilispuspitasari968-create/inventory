@@ -2,45 +2,66 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Api\BaseController;
 use App\Http\Requests\StoreCategoryRequest;
 use App\Http\Requests\UpdateCategoryRequest;
-use App\Models\Category;
+use App\Services\CategoryService;
 
-class CategoryController extends BaseController
-{
-    public function index()
-    {
-        $categories = Category::withCount('items')->get();
-        return $this->success($categories, 'Categories retrieved successfully');
+class CategoryController extends Controller {
+    protected CategoryService $svc;
+
+    public function __construct(CategoryService $svc) {
+        $this->svc = $svc;
     }
 
-    public function store(StoreCategoryRequest $request)
-    {
-        $category = Category::create($request->validated());
-        return $this->success($category, 'Category created successfully', 201);
+    public function index() {
+        return response()->json([
+            'status'  => 'success',
+            'data'    => $this->svc->all(),
+            'message' => 'Berhasil menarik semua data Kategori'
+        ]);
     }
 
-    public function show($id)
-    {
-        $category = Category::withCount('items')->find($id);
-        if (!$category) return $this->error('Category not found', 404);
-        return $this->success($category, 'Category retrieved successfully');
+    public function store(StoreCategoryRequest $req) {
+        $cat = $this->svc->create($req->validated());
+        return response()->json([
+            'status'  => 'success',
+            'data'    => $cat,
+            'message' => 'Kategori berhasil dibuat'
+        ], 201);
     }
 
-    public function update(UpdateCategoryRequest $request, $id)
-    {
-        $category = Category::find($id);
-        if (!$category) return $this->error('Category not found', 404);
-        $category->update($request->validated());
-        return $this->success($category, 'Category updated successfully');
+    public function show($id) {
+        try {
+            $cat = $this->svc->find($id);
+            return response()->json([
+                'status'  => 'success',
+                'data'    => $cat,
+                'message' => 'Berhasil menarik satu data kategori'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status'  => 'error',
+                'data'    => null,
+                'message' => $e->getMessage()
+            ], 404);
+        }
     }
 
-    public function destroy($id)
-    {
-        $category = Category::find($id);
-        if (!$category) return $this->error('Category not found', 404);
-        $category->delete();
-        return $this->success([], 'Category deleted successfully');
+    public function update(UpdateCategoryRequest $req, $id) {
+        $cat = $this->svc->update($id, $req->validated());
+        return response()->json([
+            'status'  => 'success',
+            'data'    => $cat,
+            'message' => 'Kategori berhasil diperbarui'
+        ]);
+    }
+
+    public function destroy($id) {
+        $this->svc->delete($id);
+        return response()->json([
+            'status'  => 'success',
+            'data'    => null,
+            'message' => 'Kategori berhasil dihapus'
+        ], 204);
     }
 }
