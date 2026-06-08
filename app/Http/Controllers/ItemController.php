@@ -2,32 +2,46 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Api\BaseController;
+use App\Http\Requests\StoreItemRequest;
+use App\Http\Requests\UpdateItemRequest;
 use App\Models\Item;
-use Illuminate\Http\Request;
 
-class ItemController extends Controller
+class ItemController extends BaseController
 {
-    public function index() {
-        return response()->json(Item::all(), 200);
+    public function index()
+    {
+        $items = Item::with('category')->get();
+        return $this->success($items, 'Items retrieved successfully');
     }
 
-    public function store(Request $request) {
-        $item = Item::create($request->all());
-        return response()->json($item, 201);
+    public function store(StoreItemRequest $request)
+    {
+        $item = Item::create($request->validated());
+        $item->load('category');
+        return $this->success($item, 'Item created successfully', 201);
     }
 
-    public function show($id) {
-        return response()->json(Item::findOrFail($id), 200);
+    public function show($id)
+    {
+        $item = Item::with('category')->find($id);
+        if (!$item) return $this->error('Item not found', 404);
+        return $this->success($item, 'Item retrieved successfully');
     }
 
-    public function update(Request $request, $id) {
-        $item = Item::findOrFail($id);
-        $item->update($request->all());
-        return response()->json($item, 200);
+    public function update(UpdateItemRequest $request, $id)
+    {
+        $item = Item::find($id);
+        if (!$item) return $this->error('Item not found', 404);
+        $item->update($request->validated());
+        return $this->success($item->load('category'), 'Item updated successfully');
     }
 
-    public function destroy($id) {
-        Item::destroy($id);
-        return response()->json(['message' => 'Deleted'], 200);
+    public function destroy($id)
+    {
+        $item = Item::find($id);
+        if (!$item) return $this->error('Item not found', 404);
+        $item->delete();
+        return $this->success([], 'Item deleted successfully');
     }
 }

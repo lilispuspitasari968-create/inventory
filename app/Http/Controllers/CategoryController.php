@@ -2,32 +2,45 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Api\BaseController;
+use App\Http\Requests\StoreCategoryRequest;
+use App\Http\Requests\UpdateCategoryRequest;
 use App\Models\Category;
-use Illuminate\Http\Request;
 
-class CategoryController extends Controller
+class CategoryController extends BaseController
 {
-    public function index() {
-        return response()->json(Category::all(), 200);
+    public function index()
+    {
+        $categories = Category::withCount('items')->get();
+        return $this->success($categories, 'Categories retrieved successfully');
     }
 
-    public function store(Request $request) {
-        $category = Category::create($request->all());
-        return response()->json($category, 201);
+    public function store(StoreCategoryRequest $request)
+    {
+        $category = Category::create($request->validated());
+        return $this->success($category, 'Category created successfully', 201);
     }
 
-    public function show($id) {
-        return response()->json(Category::findOrFail($id), 200);
+    public function show($id)
+    {
+        $category = Category::withCount('items')->find($id);
+        if (!$category) return $this->error('Category not found', 404);
+        return $this->success($category, 'Category retrieved successfully');
     }
 
-    public function update(Request $request, $id) {
-        $category = Category::findOrFail($id);
-        $category->update($request->all());
-        return response()->json($category, 200);
+    public function update(UpdateCategoryRequest $request, $id)
+    {
+        $category = Category::find($id);
+        if (!$category) return $this->error('Category not found', 404);
+        $category->update($request->validated());
+        return $this->success($category, 'Category updated successfully');
     }
 
-    public function destroy($id) {
-        Category::destroy($id);
-        return response()->json(['message' => 'Deleted'], 200);
+    public function destroy($id)
+    {
+        $category = Category::find($id);
+        if (!$category) return $this->error('Category not found', 404);
+        $category->delete();
+        return $this->success([], 'Category deleted successfully');
     }
 }
